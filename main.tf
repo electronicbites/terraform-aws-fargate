@@ -157,31 +157,43 @@ resource "aws_iam_role_policy_attachment" "tasks_execution_ssm" {
   policy_arn = aws_iam_policy.tasks_execution_ssm[count.index].arn
 }
 
-data "template_file" "tasks" {
-  count = local.services_count > 0 ? local.services_count : 0
-
-  template = file("${path.cwd}/${local.services[count.index].task_definition}")
-
-  vars = {
-    container_name = local.services[count.index].name
-    container_port = local.services[count.index].container_port
-    repository_url = aws_ecr_repository.this[count.index].repository_url
-    log_group      = aws_cloudwatch_log_group.this[count.index].name
-    region         = var.region != "" ? var.region : data.aws_region.current.name
-  }
-}
-
 resource "aws_ecs_task_definition" "this" {
   count = local.services_count > 0 ? local.services_count : 0
 
   family                   = "${var.name}-${terraform.workspace}-${local.services[count.index].name}"
-  container_definitions    = data.template_file.tasks[count.index].rendered
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = local.services[count.index].cpu
   memory                   = local.services[count.index].memory
   execution_role_arn       = aws_iam_role.tasks_execution.arn
   task_role_arn            = lookup(local.services[count.index], "task_role_arn", null)
+  container_definitions = <<DEFINITION
+[
+  {
+    "name": "${local.services[count.index].name}",
+    "image": "${aws_ecr_repository.this[count.index].repository_url}:latest",
+    "essential": true,
+    "cpu": local.services[count.index].cpu,
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": local.services[count.index].container_port,
+        "hostPort": local.services[count.index].container_port
+      }
+    ],
+    "environment": ${jsonencode(var.task_environment_vars)},
+    "secrets": ${jsonencode(var.task_environment_secrets)},
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/fargate/service/${local.services[count.index].name}-${terraform.workspace}",
+        "awslogs-region": var.region != "" ? var.region : data.aws_region.current.name,
+        "awslogs-stream-prefix": "ecs"
+      }
+    }
+  }
+]
+DEFINITION
 }
 
 data "aws_ecs_task_definition" "this" {
