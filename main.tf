@@ -181,8 +181,8 @@ resource "aws_ecs_task_definition" "this" {
         "hostPort": local.services[count.index].container_port
       }
     ],
-    "environment": jsonencode(${local.services[count.index].task_environment_vars}),
-    "secrets": jsonencode(${local.services[count.index].task_environment_secrets}),
+    "environment": ${jsonencode(var.task_environment_vars)},
+    "secrets": ${jsonencode(var.task_environment_secrets)},
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
