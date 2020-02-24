@@ -57,13 +57,19 @@ variable "vpc_external_private_subnets_ids" {
 
 variable "task_environment_vars" {
   description = "TODO"
-  type =      list(map)
+  type = list(object({
+    name = string
+    value = string
+  }))
   default     = []
 }
 
 variable "task_environment_secrets" {
   description = "TODO"
-  type =      list(map)
+  type = list(object({
+    name = string
+    value = string
+  }))
   default     = []
 }
 
