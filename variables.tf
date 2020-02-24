@@ -68,7 +68,7 @@ variable "task_environment_secrets" {
   description = "TODO"
   type = list(object({
     name = string
-    value = string
+    valueFrom = string
   }))
   default     = []
 }
