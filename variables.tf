@@ -55,6 +55,18 @@ variable "vpc_external_private_subnets_ids" {
   default     = []
 }
 
+variable "task_environment_vars" {
+  description = "TODO"
+  type =      list(map)
+  default     = []
+}
+
+variable "task_environment_secrets" {
+  description = "TODO"
+  type =      list(map)
+  default     = []
+}
+
 ## LOGS
 
 variable "cloudwatch_logs_default_retention_days" {
